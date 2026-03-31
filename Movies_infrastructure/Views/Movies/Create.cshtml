@@ -1,0 +1,54 @@
+﻿@model Movies_domain.Model.Movie
+
+@{
+    ViewData["Title"] = "Створити фільм";
+}
+
+<h1>Створити фільм для жанру "@ViewBag.GenreName"</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <input type="hidden" name="genreId" value="@ViewBag.GenreId" />
+            <input type="hidden" name="genreName" value="@ViewBag.GenreName" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="MvName" class="control-label"></label>
+                <input asp-for="MvName" class="form-control" />
+                <span asp-validation-for="MvName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MvDescription" class="control-label"></label>
+                <textarea asp-for="MvDescription" class="form-control"></textarea>
+                <span asp-validation-for="MvDescription" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MvYear" class="control-label"></label>
+                <input asp-for="MvYear" class="form-control" />
+                <span asp-validation-for="MvYear" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">Актори</label>
+                <select name="selectedActors" class="form-control" multiple>
+                    @foreach (var actor in (MultiSelectList)ViewBag.Actors)
+                    {
+                        <option value="@actor.Value">@actor.Text</option>
+                    }
+                </select>
+                <small class="form-text text-muted">Утримуйте Ctrl для вибору кількох акторів</small>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Створити" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" asp-route-id="@ViewBag.GenreId" asp-route-name="@ViewBag.GenreName">Повернутись до списку</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

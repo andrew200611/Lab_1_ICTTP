@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Movies_domain/Movies_domain.csproj" />
+  <Project Path="Movies_infrastructure/Movies_infrastructure.csproj" />
+</Solution>

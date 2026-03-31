@@ -1,0 +1,119 @@
+@model IEnumerable<Movies_domain.Model.Movie>
+
+@{
+    ViewData["Title"] = ViewBag.GenreId == null ? "Всі фільми" : $"Фільми жанру {ViewBag.GenreName}";
+}
+
+@if (ViewBag.GenreId != null)
+{
+    <h1>Фільми жанру @ViewBag.GenreName</h1>
+    <p>
+        <a asp-action="Create" asp-route-genreId="@ViewBag.GenreId" asp-route-genreName="@ViewBag.GenreName">Додати новий фільм</a>
+    </p>
+}
+else
+{
+    <h1>Всі фільми</h1>
+    <p>
+        <a asp-action="Create">Додати новий фільм</a>
+    </p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.MvName)</th>
+            <th>@Html.DisplayNameFor(model => model.MvDescription)</th>
+            <th>@Html.DisplayNameFor(model => model.MvYear)</th>
+            <th>Актори</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.MvName)</td>
+                <td>@Html.DisplayFor(modelItem => item.MvDescription)</td>
+                <td>@Html.DisplayFor(modelItem => item.MvYear)</td>
+                <td>
+                    @if (item.Acts != null && item.Acts.Any())
+                    {
+                        @string.Join(", ", item.Acts.Select(a => a.ActName))
+                    }
+                    else
+                    {
+                        <em>Немає акторів</em>
+                    }
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (ViewBag.GenreId == null)
+{
+    <div class="row mt-4">
+        <div class="col-6">
+            <div id="countByYearChart"></div>
+        </div>
+        <div class="col-6">
+            <div id="countByGenreChart"></div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+        @if (ViewBag.GenreId == null)
+        {
+            <text>
+            google.charts.load('current', { packages: ['corechart'] });
+            google.charts.setOnLoadCallback(drawCharts);
+
+            function drawCharts() {
+                // Діаграма 1 — фільми за роком
+                fetch('/api/charts/countByYear')
+                    .then(r => r.json())
+                    .then(data => {
+                        const table = new google.visualization.DataTable();
+                        table.addColumn('string', 'Рік');
+                        table.addColumn('number', 'Кількість фільмів');
+                        data.forEach(item => table.addRow([item.year, item.count]));
+
+                        const chart = new google.visualization.ColumnChart(
+                            document.getElementById('countByYearChart'));
+                        chart.draw(table, {
+                            title: 'Фільми за роком випуску',
+                            width: 500, height: 350,
+                            legend: { position: 'none' }
+                        });
+                    });
+
+                // Діаграма 2 — фільми за жанром
+                fetch('/api/charts/countByGenre')
+                    .then(r => r.json())
+                    .then(data => {
+                        const table = new google.visualization.DataTable();
+                        table.addColumn('string', 'Жанр');
+                        table.addColumn('number', 'Кількість фільмів');
+                        data.forEach(item => table.addRow([item.genre, item.count]));
+
+                        const chart = new google.visualization.PieChart(
+                            document.getElementById('countByGenreChart'));
+                        chart.draw(table, {
+                            title: 'Фільми за жанром',
+                            width: 500, height: 350
+                        });
+                    });
+            }
+            </text>
+        }
+    </script>
+}

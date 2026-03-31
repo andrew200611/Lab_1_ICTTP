@@ -1,0 +1,51 @@
+﻿@model Movies_domain.Model.Review
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Review</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="RwMovie" class="control-label"></label>
+                <select asp-for="RwMovie" class ="form-control" asp-items="ViewBag.RwMovie"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="RwUser" class="control-label"></label>
+                <select asp-for="RwUser" class ="form-control" asp-items="ViewBag.RwUser"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="RwDate" class="control-label"></label>
+                <input asp-for="RwDate" class="form-control" />
+                <span asp-validation-for="RwDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="RwText" class="control-label"></label>
+                <input asp-for="RwText" class="form-control" />
+                <span asp-validation-for="RwText" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="RwRate" class="control-label"></label>
+                <input asp-for="RwRate" class="form-control" />
+                <span asp-validation-for="RwRate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
