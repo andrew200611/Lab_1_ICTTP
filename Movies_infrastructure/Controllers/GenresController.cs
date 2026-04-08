@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Movies_domain.Model;
 using Movies_infrastructure;
+using Movies_infrastructure.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Movies_infrastructure.Controllers
 {
@@ -14,10 +15,58 @@ namespace Movies_infrastructure.Controllers
     {
         private readonly Lab1dbContext _context;
 
-        public GenresController(Lab1dbContext context)
+        private readonly IDataPortServiceFactory<Genre> _genreDataPortServiceFactory;
+
+        public GenresController(Lab1dbContext context, IDataPortServiceFactory<Genre> genreDataPortServiceFactory)
         {
             _context = context;
+            _genreDataPortServiceFactory = genreDataPortServiceFactory;
         }
+
+        [HttpGet]
+        public IActionResult Import() => View();
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(IFormFile fileExcel, CancellationToken cancellationToken = default)
+        {
+            if (fileExcel == null || fileExcel.Length == 0)
+            {
+                ModelState.AddModelError(string.Empty, "Будь ласка, оберіть файл для завантаження.");
+                return View();
+            }
+
+            var importService = _genreDataPortServiceFactory.GetImportService(fileExcel.ContentType);
+            using var stream = fileExcel.OpenReadStream();
+            await importService.ImportFromStreamAsync(stream, cancellationToken);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearDatabase(CancellationToken cancellationToken = default)
+        {
+         
+            await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Movies\", \"Genres\", \"Actors\", \"Reviews\", \"Users\" CASCADE;", cancellationToken);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(CancellationToken cancellationToken = default,
+            [FromQuery] string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        {
+            var exportService = _genreDataPortServiceFactory.GetExportService(contentType);
+            var memoryStream = new MemoryStream();
+            await exportService.WriteToAsync(memoryStream, cancellationToken);
+            await memoryStream.FlushAsync(cancellationToken);
+            memoryStream.Position = 0;
+            return new FileStreamResult(memoryStream, contentType)
+            {
+                FileDownloadName = $"genres_{DateTime.UtcNow:yyyy-MM-dd}.xlsx"
+            };
+        }
+
+
 
         // GET: Genres
         public async Task<IActionResult> Index()

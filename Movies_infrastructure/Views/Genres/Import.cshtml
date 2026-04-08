@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Імпорт жанрів";
+}
+
+<h1>Імпорт</h1>
+<div>
+    <h3>Оберіть Excel-файл для завантаження</h3>
+    @using (Html.BeginForm("Import", "Genres", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div>
+            Завантажте Excel-файл:
+            <input type="file" name="fileExcel" id="fileExcel" accept=".xlsx" />
+        </div>
+        <div class="mt-2">
+            <input type="submit" value="Завантажити" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Скасувати</a>
+        </div>
+    }
+</div>

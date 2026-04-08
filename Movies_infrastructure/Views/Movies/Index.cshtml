@@ -14,9 +14,18 @@
 else
 {
     <h1>Всі фільми</h1>
-    <p>
-        <a asp-action="Create">Додати новий фільм</a>
-    </p>
+}
+
+@if (ViewBag.GenreId == null)
+{
+    <div class="row mt-4 mb-4">
+        <div class="col-6">
+            <div id="countByYearChart"></div>
+        </div>
+        <div class="col-6">
+            <div id="countByGenreChart"></div>
+        </div>
+    </div>
 }
 
 <table class="table">
@@ -25,6 +34,10 @@ else
             <th>@Html.DisplayNameFor(model => model.MvName)</th>
             <th>@Html.DisplayNameFor(model => model.MvDescription)</th>
             <th>@Html.DisplayNameFor(model => model.MvYear)</th>
+            @if (ViewBag.GenreId == null)
+            {
+                <th>Жанри</th>
+            }
             <th>Актори</th>
             <th></th>
         </tr>
@@ -36,6 +49,19 @@ else
                 <td>@Html.DisplayFor(modelItem => item.MvName)</td>
                 <td>@Html.DisplayFor(modelItem => item.MvDescription)</td>
                 <td>@Html.DisplayFor(modelItem => item.MvYear)</td>
+                @if (ViewBag.GenreId == null)
+                {
+                    <td>
+                        @if (item.Grs != null && item.Grs.Any())
+                        {
+                            @string.Join(", ", item.Grs.Select(g => g.GrName))
+                        }
+                        else
+                        {
+                            <em>Немає жанрів</em>
+                        }
+                    </td>
+                }
                 <td>
                     @if (item.Acts != null && item.Acts.Any())
                     {
@@ -56,18 +82,6 @@ else
     </tbody>
 </table>
 
-@if (ViewBag.GenreId == null)
-{
-    <div class="row mt-4">
-        <div class="col-6">
-            <div id="countByYearChart"></div>
-        </div>
-        <div class="col-6">
-            <div id="countByGenreChart"></div>
-        </div>
-    </div>
-}
-
 @section Scripts {
     <script src="https://www.gstatic.com/charts/loader.js"></script>
     <script>
@@ -78,7 +92,7 @@ else
             google.charts.setOnLoadCallback(drawCharts);
 
             function drawCharts() {
-                // Діаграма 1 — фільми за роком
+               
                 fetch('/api/charts/countByYear')
                     .then(r => r.json())
                     .then(data => {
@@ -96,7 +110,7 @@ else
                         });
                     });
 
-                // Діаграма 2 — фільми за жанром
+              
                 fetch('/api/charts/countByGenre')
                     .then(r => r.json())
                     .then(data => {

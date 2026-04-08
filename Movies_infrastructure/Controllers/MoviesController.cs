@@ -25,7 +25,9 @@ namespace Movies_infrastructure.Controllers
             ViewBag.GenreId = id;
             ViewBag.GenreName = name;
 
-            IQueryable<Movie> query = _context.Movies.Include(m => m.Acts);
+            IQueryable<Movie> query = _context.Movies
+                .Include(m => m.Acts)
+                .Include(m => m.Grs);
 
             if (id != null)
             {
@@ -214,8 +216,7 @@ namespace Movies_infrastructure.Controllers
                 {
                     _context.Movies.Remove(movie);
                     await _context.SaveChangesAsync();
-                    // Here we don't have genreId or genreName easily accessible to redirect back to Index(genre), 
-                    // redirecting to Genres index as a fallback or simply indexing is fine.
+                    
                     return RedirectToAction(nameof(Index), "Genres"); 
                 }
                 catch (DbUpdateException)

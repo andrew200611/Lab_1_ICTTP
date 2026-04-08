@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using Movies_domain.Model;
 using Movies_infrastructure;
+using Movies_infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<Lab1dbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IDataPortServiceFactory<Genre>, GenreDataPortServiceFactory>();
 
 var app = builder.Build();
 
