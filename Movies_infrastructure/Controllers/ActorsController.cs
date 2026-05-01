@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Movies_domain.Model;
 using Movies_infrastructure;
+using Movies_infrastructure.ViewModels;
 
 namespace Movies_infrastructure.Controllers
 {
@@ -22,7 +23,38 @@ namespace Movies_infrastructure.Controllers
         // GET: Actors
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Actors.Include(a => a.Mvs).ToListAsync());
+            var actors = await _context.Actors.ToListAsync();
+            var movies = await _context.Movies.Include(m => m.Acts).ToListAsync();
+
+            var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var movie in movies)
+            {
+                if (movie.Acts == null) continue;
+                foreach (var act in movie.Acts)
+                {
+                    var name = (act.ActName ?? string.Empty).Trim();
+                    if (string.IsNullOrEmpty(name)) continue;
+                    if (!map.TryGetValue(name, out var list))
+                    {
+                        list = new List<string>();
+                        map[name] = list;
+                    }
+                    if (!list.Contains(movie.MvName))
+                    {
+                        list.Add(movie.MvName);
+                    }
+                }
+            }
+
+            var model = actors.Select(a => new ActorListItem
+            {
+                Id = a.Id,
+                ActName = a.ActName,
+                MovieNames = map.TryGetValue((a.ActName ?? string.Empty).Trim(), out var mv) ? mv : new List<string>()
+            }).ToList();
+
+            return View(model);
         }
 
         // GET: Actors/Details/5

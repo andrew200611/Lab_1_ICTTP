@@ -32,5 +32,25 @@
 </div>
 <div>
     <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+
+    @if (ViewBag.IsFavorite == true)
+    {
+        <form asp-action="RemoveFavorite" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@Url.Action("Details", "Movies", new { id = Model.Id })" />
+            <button type="submit" class="btn btn-sm btn-outline-danger">Видалити з улюблених</button>
+        </form>
+    }
+    else
+    {
+        <form asp-action="AddFavorite" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@Url.Action("Details", "Movies", new { id = Model.Id })" />
+            <button type="submit" class="btn btn-sm btn-outline-success">Додати в улюблені</button>
+        </form>
+    }
+
+    | <a asp-action="Index">Back to List</a>
 </div>

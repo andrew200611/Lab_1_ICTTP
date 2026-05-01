@@ -25,4 +25,8 @@
     <ProjectReference Include="..\Movies_domain\Movies_domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\Reviews\" />
+  </ItemGroup>
+
 </Project>

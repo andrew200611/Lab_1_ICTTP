@@ -19,6 +19,29 @@ namespace Movies_infrastructure.Controllers
             _context = context;
         }
 
+        private async Task<User?> GetOrCreateDefaultUserAsync(CancellationToken ct = default)
+        {
+            var user = await _context.Users.Include(u => u.FavMovies).FirstOrDefaultAsync(u => u.Id == 1, ct);
+            if (user != null) return user;
+
+            user = await _context.Users.Include(u => u.FavMovies).FirstOrDefaultAsync(u => u.UsEmail == "default@local", ct);
+            if (user != null) return user;
+
+            var newUser = new User
+            {
+                UsEmail = "default@local",
+                UsName = "Default",
+                UsPassword = null,
+                UsRole = null
+            };
+
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync(ct);
+
+            user = await _context.Users.Include(u => u.FavMovies).FirstOrDefaultAsync(u => u.Id == newUser.Id, ct);
+            return user;
+        }
+
         // GET: Movies
         public async Task<IActionResult> Index(int? id, string? name)
         {
@@ -34,7 +57,18 @@ namespace Movies_infrastructure.Controllers
                 query = query.Where(m => m.Grs.Any(g => g.Id == id));
             }
 
-            return View(await query.ToListAsync());
+            var movies = await query.ToListAsync();
+
+            var favIds = new HashSet<int>();
+            var favUser = await GetOrCreateDefaultUserAsync();
+            if (favUser != null && favUser.FavMovies != null)
+            {
+                favIds = new HashSet<int>(favUser.FavMovies.Select(m => m.Id));
+            }
+
+            ViewBag.FavMovieIds = favIds;
+
+            return View(movies);
         }
 
         // GET: Movies/Details
@@ -42,9 +76,15 @@ namespace Movies_infrastructure.Controllers
         {
             if (id == null) return NotFound();
             var movie = await _context.Movies
+                .Include(m => m.Acts)
+                .Include(m => m.Grs)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (movie == null) return NotFound();
-            return RedirectToAction("Index", "Reviews", new { id = movie.Id, name = movie.MvName });
+
+            var favUser = await GetOrCreateDefaultUserAsync();
+            ViewBag.IsFavorite = favUser != null && favUser.FavMovies.Any(m => m.Id == movie.Id);
+
+            return View(movie);
         }
 
         // GET: Movies/Create
@@ -63,23 +103,17 @@ namespace Movies_infrastructure.Controllers
         {
             if (ModelState.IsValid)
             {
-                
                 var genre = await _context.Genres.FindAsync(genreId);
                 if (genre != null)
                 {
-                    
                     _context.Add(movie);
-
-                    
                     movie.Grs.Add(genre);
                 }
                 else
                 {
-                    
                     _context.Add(movie);
                 }
 
-                
                 if (selectedActors != null)
                 {
                     foreach (var actorId in selectedActors)
@@ -92,7 +126,6 @@ namespace Movies_infrastructure.Controllers
                     }
                 }
 
-                // Зберігаємо зміни
                 await _context.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index), new { id = genreId, name = genreName });
@@ -151,7 +184,6 @@ namespace Movies_infrastructure.Controllers
                     movieToUpdate.MvDescription = movie.MvDescription;
                     movieToUpdate.MvYear = movie.MvYear;
 
-                    
                     movieToUpdate.Acts.Clear();
                     if (selectedActors != null)
                     {
@@ -216,10 +248,10 @@ namespace Movies_infrastructure.Controllers
                 {
                     _context.Movies.Remove(movie);
                     await _context.SaveChangesAsync();
-                    
+
                     return RedirectToAction(nameof(Index), "Genres"); 
                 }
-                catch (DbUpdateException)
+                catch (DbUpdateConcurrencyException)
                 {
                     ModelState.AddModelError("", "Не можна видалити цей фільм, оскільки він має пов'язані дані, що забороняють видалення.");
                     return View(movie);
@@ -227,6 +259,60 @@ namespace Movies_infrastructure.Controllers
             }
 
             return RedirectToAction(nameof(Index), "Genres");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Favorites()
+        {
+            var user = await GetOrCreateDefaultUserAsync();
+
+            var movies = (await _context.Movies
+                .Where(m => user != null && user.FavMovies.Select(f => f.Id).Contains(m.Id))
+                .Include(m => m.Acts)
+                .Include(m => m.Grs)
+                .ToListAsync())
+                .Where(m => m != null)
+                .ToList();
+
+            return View(movies);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddFavorite(int id, string? returnUrl)
+        {
+            var user = await GetOrCreateDefaultUserAsync();
+            if (user != null)
+            {
+                var movie = await _context.Movies.FindAsync(id);
+                if (movie != null && !user.FavMovies.Any(m => m.Id == id))
+                {
+                    user.FavMovies.Add(movie);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl)) return Redirect(returnUrl);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveFavorite(int id, string? returnUrl)
+        {
+            var user = await GetOrCreateDefaultUserAsync();
+            if (user != null)
+            {
+                var movie = user.FavMovies.FirstOrDefault(m => m.Id == id);
+                if (movie != null)
+                {
+                    user.FavMovies.Remove(movie);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl)) return Redirect(returnUrl);
+            return RedirectToAction(nameof(Index));
         }
 
         private bool MovieExists(int id)

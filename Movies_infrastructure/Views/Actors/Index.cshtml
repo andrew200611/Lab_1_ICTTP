@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Movies_domain.Model.Actor>
+﻿@model IEnumerable<Movies_infrastructure.ViewModels.ActorListItem>
 
 @{
     ViewData["Title"] = "Актори";
@@ -13,7 +13,7 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.ActName)
+                @Html.DisplayNameFor(model => model.First().ActName)
             </th>
             <th>Фільми</th>
             <th></th>
@@ -26,9 +26,9 @@
                 @Html.DisplayFor(modelItem => item.ActName)
             </td>
             <td>
-                @if (item.Mvs != null && item.Mvs.Any())
+                @if (item.MovieNames != null && item.MovieNames.Any())
                 {
-                    @string.Join(", ", item.Mvs.Select(m => m.MvName))
+                    @string.Join(", ", item.MovieNames)
                 }
                 else
                 {

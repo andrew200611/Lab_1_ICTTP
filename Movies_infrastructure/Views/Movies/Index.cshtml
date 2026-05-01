@@ -39,10 +39,12 @@ else
                 <th>Жанри</th>
             }
             <th>Актори</th>
+            <th>Улюблені</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
+        @{ var favIds = ViewBag.FavMovieIds as System.Collections.Generic.HashSet<int> ?? new System.Collections.Generic.HashSet<int>(); }
         @foreach (var item in Model)
         {
             <tr>
@@ -73,6 +75,26 @@ else
                     }
                 </td>
                 <td>
+                    @if (favIds.Contains(item.Id))
+                    {
+                        <form asp-action="RemoveFavorite" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <input type="hidden" name="returnUrl" value="@Url.Action("Index", new { id = ViewBag.GenreId, name = ViewBag.GenreName })" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="AddFavorite" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <input type="hidden" name="returnUrl" value="@Url.Action("Index", new { id = ViewBag.GenreId, name = ViewBag.GenreName })" />
+                            <button type="submit" class="btn btn-sm btn-outline-success">Додати</button>
+                        </form>
+                    }
+                </td>
+                <td>
                     <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                     <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
                     <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
@@ -91,41 +113,60 @@ else
             google.charts.load('current', { packages: ['corechart'] });
             google.charts.setOnLoadCallback(drawCharts);
 
+            function toNumber(v) {
+                if (v === null || v === undefined) return 0;
+                var n = Number(v);
+                return isNaN(n) ? 0 : n;
+            }
+
+            function toString(v) {
+                if (v === null || v === undefined) return '';
+                return String(v);
+            }
+
             function drawCharts() {
-               
+                
                 fetch('/api/charts/countByYear')
                     .then(r => r.json())
                     .then(data => {
                         const table = new google.visualization.DataTable();
-                        table.addColumn('string', 'Рік');
-                        table.addColumn('number', 'Кількість фільмів');
-                        data.forEach(item => table.addRow([item.year, item.count]));
+                        table.addColumn('string', 'рік');
+                        table.addColumn('number', 'кількість фільмів');
+                        data.forEach(item => {
+                            var year = item.year ?? item.Year ?? '';
+                            var count = item.count ?? item.Count ?? 0;
+                            table.addRow([toString(year), toNumber(count)]);
+                        });
 
                         const chart = new google.visualization.ColumnChart(
                             document.getElementById('countByYearChart'));
                         chart.draw(table, {
-                            title: 'Фільми за роком випуску',
+                            title: 'Кількість фільмів по рокам',
                             width: 500, height: 350,
                             legend: { position: 'none' }
                         });
-                    });
+                    }).catch(err => console.warn('Error loading countByYear:', err));
 
-              
+                
                 fetch('/api/charts/countByGenre')
                     .then(r => r.json())
                     .then(data => {
                         const table = new google.visualization.DataTable();
-                        table.addColumn('string', 'Жанр');
-                        table.addColumn('number', 'Кількість фільмів');
-                        data.forEach(item => table.addRow([item.genre, item.count]));
+                        table.addColumn('string', 'жанр');
+                        table.addColumn('number', 'кількість фільмів');
+                        data.forEach(item => {
+                            var genre = item.genre ?? item.Genre ?? '';
+                            var count = item.count ?? item.Count ?? 0;
+                            table.addRow([toString(genre), toNumber(count)]);
+                        });
 
                         const chart = new google.visualization.PieChart(
                             document.getElementById('countByGenreChart'));
                         chart.draw(table, {
-                            title: 'Фільми за жанром',
+                            title: 'Кількість фільмів по жанрам',
                             width: 500, height: 350
                         });
-                    });
+                    }).catch(err => console.warn('Error loading countByGenre:', err));
             }
             </text>
         }

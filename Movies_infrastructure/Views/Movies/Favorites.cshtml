@@ -1,0 +1,44 @@
+@model IEnumerable<Movies_domain.Model.Movie>
+
+@{
+    ViewData["Title"] = "Улюблені";
+}
+
+<h1>Улюблені фільми</h1>
+
+<p>
+    <a asp-action="Index">Усі фільми</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.MvName)</th>
+            <th>@Html.DisplayNameFor(model => model.MvDescription)</th>
+            <th>@Html.DisplayNameFor(model => model.MvYear)</th>
+            <th>Актори</th>
+            <th>Жанри</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.MvName)</td>
+                <td>@Html.DisplayFor(modelItem => item.MvDescription)</td>
+                <td>@Html.DisplayFor(modelItem => item.MvYear)</td>
+                <td>@(item.Acts != null && item.Acts.Any() ? string.Join(", ", item.Acts.Select(a => a.ActName)) : "—")</td>
+                <td>@(item.Grs != null && item.Grs.Any() ? string.Join(", ", item.Grs.Select(g => g.GrName)) : "—")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <form asp-action="RemoveFavorite" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
